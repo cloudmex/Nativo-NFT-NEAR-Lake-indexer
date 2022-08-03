@@ -45,14 +45,20 @@ async def handle_streamer_message(streamer_message: near_primitives.StreamerMess
                 for log in receipt_execution_outcome.execution_outcome.outcome.logs:
                     method=""
                     if "collection_id" in log : 
-                        print("Metodo crear/editar coleccion")
-                        if "create" in log:
+                        if "create" in log :
                             method="add_new_user_collection-create"
                         else:
                             method="add_new_user_collection-edit"
+                    if "approval_id" in log :
+                        method="add_token_to_collection"
+                    if "username" in log :
+                        if "create" in log :
+                            method="add_new_profile-create"
+                        else:
+                            method="add_new_profile-edit"
                     output = {
                         "receipt_id": receipt_execution_outcome.receipt.receipt_id,
-                        "data": str(log),
+                        "data": json.loads(log),
                         "contract": receipt_execution_outcome.receipt.receiver_id,
                         "method": method
                     }
@@ -104,7 +110,7 @@ async def handle_streamer_message(streamer_message: near_primitives.StreamerMess
 
 async def main():
     config = LakeConfig.testnet()
-    config.start_block_height = 96555620
+    config.start_block_height = 96635755
     config.aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
     config.aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 
