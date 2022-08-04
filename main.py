@@ -2,9 +2,76 @@ import asyncio
 import json
 import os
 import re
+from sqlite3 import Timestamp
+from typing import final
+import psycopg2
+from configparser import ConfigParser
 
 from near_lake_framework import near_primitives, LakeConfig, streamer
 
+def config(filename='database.ini', section='postgresql'):
+    parser = ConfigParser()
+    parser.read(filename)
+    db={}
+    if parser.has_section(section):
+        params = parser.items(section)
+        for param in params:
+            db[param[0]]= param[1]
+    else:
+        raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+    return db
+
+def init_db():
+    commands = """
+        CREATE TABLE IF NOT EXISTS nativo_indexer_data (
+            receipt_id  text        NOT NULL,
+            data        jsonb       NOT NULL,
+            contract    text        NOT NULL,
+            method      text        NOT NULL,
+            date        text   NOT NULL,
+            PRIMARY KEY (receipt_id, date)
+        )
+        """
+    
+    conn = None
+    try:
+        params = config()
+        print('Conectando a la base de datos')
+        conn = psycopg2.connect(**params)
+        cur=conn.cursor()
+        print(commands)
+        print(conn)
+        print(cur)
+        cur.execute(commands)
+        cur.close()
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+            print('Database connection closed.')
+
+def insert_data(receipt,data,contract,method,date):
+    query = """
+            INSERT INTO nativo_indexer_data(receipt_id,data,contract,method,date)
+            VALUES(%s,%s,%s,%s,%s)
+            """
+    conn = None
+    
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        cur.execute(query, (receipt,json.dumps(data),contract,method,date))
+        conn.commit()
+        cur.close()
+        print('Log Insertado')
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
 
 def format_paras_nfts(data, receipt_execution_outcome):
     links = []
@@ -62,6 +129,11 @@ async def handle_streamer_message(streamer_message: near_primitives.StreamerMess
                         "contract": receipt_execution_outcome.receipt.receiver_id,
                         "method": method
                     }
+                    receipt = receipt_execution_outcome.receipt.receipt_id
+                    data = json.loads(log)
+                    contract = receipt_execution_outcome.receipt.receiver_id
+                    date = streamer_message.block.header.timestamp_nanosec
+                    insert_data(receipt,data,contract,method,date)
                     print(json.dumps(output, indent=4))
             else:
                 continue
@@ -109,8 +181,9 @@ async def handle_streamer_message(streamer_message: near_primitives.StreamerMess
 
 
 async def main():
+    init_db()
     config = LakeConfig.testnet()
-    config.start_block_height = 96635755
+    config.start_block_height = 96734620
     config.aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
     config.aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 
