@@ -1,0 +1,113 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Collection {
+    id: ID!
+    owner_id: String!
+    title: String!
+    description: String!
+    tokenCount: BigInt!
+    salesCount: BigInt!
+    saleVolume: BigDecimal!
+    mediaIcon: String!
+    mediaBanner: String!
+    collectionID: BigInt!
+    timestamp: BigInt!
+    visibility: Boolean!
+}
+
+type Profile {
+    id: ID!
+    username: String!
+    media: String!
+    biography: String!
+    tokCreated: BigInt!
+    tokBought: BigInt!
+    socialMedia: String!
+    timestamp: BigInt!
+}
+
+type Market {
+    id: ID!
+    contract: String!
+    salesCount: BigInt!
+    onSaleCount: BigInt!
+    saleVolume: BigInt!
+}
+
+type Bid {
+    id: ID!
+    contract: String!
+    tokenId: BigInt!
+    bidder: String!
+    price: BigInt!
+    status: String!
+    timestamp: BigInt!
+}
+
+type Action {
+    id: ID!
+    type: String!
+    data: String!
+    timestamp: String!
+}
+
+type Minter {
+    id: ID!
+    contract: String!
+    tokenCount: BigInt!
+    collectionCount: BigInt!
+}
+
+type Token {
+    id: ID!
+    contract: String!
+    tokenId: BigInt!
+    owner_id: String!
+    title: String!
+    description: String!
+    media: String!
+    creator: String!
+    price: String!
+    onSale: Boolean!
+    extra: String!
+    approvalID: BigInt!
+    collectionID: BigInt!
+    timestamp: BigInt!
+}
+
+type Serie {
+    id: ID!
+    title: String!
+    description: String!
+    media: String!
+    status: String!
+    creator: String!
+    price: String!
+    extra: String!
+    copies: BigInt!
+    collectionID: BigInt!
+    timestamp: BigInt!
+}
+
+type Query {
+    getProfile(id: ID!): Profile
+}
+
+type Query {
+    getCollection(id: ID!): Collection
+}
+
+type Query {
+    getToken(id: ID!): Token
+}
+
+type Query {
+    getTokens(): Token
+}
+
+type Query {
+    getCollections(): Collection
+}
